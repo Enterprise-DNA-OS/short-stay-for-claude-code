@@ -1,11 +1,35 @@
 [
   {
-    "name": "example",
-    "title": "TODO(author): the first document this industry must produce",
-    "for_each": "select gen_random_uuid() as id, 'Example' as name",
+    "name": "owner-statement",
+    "title": "Owner statement",
+    "for_each": "select s.id, o.name || ' ' || to_char(s.period_start, 'YYYY-MM') as name from statements s join owners o on o.id = s.owner_id where s.period_start >= (date_trunc('month', stay_today()) - interval '3 months')::date order by s.period_start, o.name",
     "file": "name",
     "sections": [
-      { "title": "Details", "sql": "select 'replace me' as item, $1::text as record_id" }
+      { "title": "Statement", "sql": "select st.business_name as \"from\", o.name as \"to\", s.period_start as \"period from\", s.period_end as \"period to\", s.status, coalesce(s.issued_on::text, 'not issued') as \"issued\" from statements s join owners o on o.id = s.owner_id cross join settings st where s.id = $1" },
+      { "title": "Stays that finished in the period", "note": "Rent is what the guest paid for the nights. Commission is the booking channel's. The management fee is charged on rent after commission, with GST.", "sql": "select v.home, v.code as booking, v.arrive_on as \"in\", v.depart_on as \"out\", v.nights, v.channel, round(v.rent_cents / 100.0, 2) as rent, round(v.commission_cents / 100.0, 2) as commission, round((v.fee_cents + v.fee_gst_cents) / 100.0, 2) as \"management fee incl GST\", round(v.owner_cents / 100.0, 2) as \"to you\" from v_live v join statements s on s.owner_id = v.owner_id where s.id = $1 and v.depart_on between s.period_start and s.period_end order by v.home, v.depart_on" },
+      { "title": "Expenses paid on your behalf", "sql": "select h.name as home, e.incurred_on as \"date\", e.description, round(e.amount_cents / 100.0, 2) as amount from expenses e join homes h on h.id = e.home_id where e.statement_id = $1 order by e.incurred_on" },
+      { "title": "Summary", "sql": "select s.stays, round(s.rent_cents / 100.0, 2) as rent, round(s.commission_cents / 100.0, 2) as \"channel commission\", round(s.fee_cents / 100.0, 2) as \"management fee\", round(s.fee_gst_cents / 100.0, 2) as \"GST on fee\", round(s.expenses_cents / 100.0, 2) as expenses, round(s.payout_cents / 100.0, 2) as \"payout to you\" from statements s where s.id = $1" }
+    ]
+  },
+  {
+    "name": "clean-run-sheet",
+    "title": "Clean run sheet",
+    "for_each": "select distinct cr.id, cr.name from cleans c join cleaners cr on cr.id = c.cleaner_id where c.status = 'scheduled' and c.due_on between stay_today() and stay_today() + 2 order by cr.name",
+    "file": "name",
+    "sections": [
+      { "title": "Your cleans", "note": "Same-day turnovers first: the next guests can check in from the time shown. Report damage or missing items with photos before you leave.", "sql": "select c.due_on as \"date\", h.name as home, h.address, coalesce(h.access_notes, '') as access, (select n.arrive_on from reservations n where n.home_id = c.home_id and n.arrive_on >= c.due_on and n.status in ('confirmed', 'checked_in') order by n.arrive_on limit 1) as \"next guests\", h.check_in_time as \"ready by\", h.bedrooms, '' as \"done\" from cleans c join homes h on h.id = c.home_id where c.cleaner_id = $1 and c.status = 'scheduled' and c.due_on between stay_today() and stay_today() + 2 order by c.due_on, h.name" }
+    ]
+  },
+  {
+    "name": "letting-record",
+    "title": "Letting record for the counting year",
+    "for_each": "select h.id, h.name from homes h where h.active and (h.night_cap is not null or h.registration_no is not null) order by h.name",
+    "file": "name",
+    "sections": [
+      { "title": "Home", "sql": "select h.name as home, h.address, h.rules, coalesce(h.registration_no, 'not recorded') as registration, h.registration_expires_on as \"registration expires\", coalesce(h.night_cap::text, 'none') as \"night cap\", coalesce(h.approval_ref, '') as approval, y.year_start as \"year from\" from homes h join v_cap_year y on y.home_id = h.id where h.id = $1" },
+      { "title": "Nights let", "note": "Bookings of 21 nights or more and owner blocks are listed but not counted towards a cap.", "sql": "select l.code as booking, l.arrive_on as \"in\", l.depart_on as \"out\", l.nights, l.channel, case when l.nights >= 21 then 'not counted (21+ nights)' else 'counted' end as cap from v_live l join v_cap_year y on y.home_id = l.home_id where l.home_id = $1 and l.depart_on > y.year_start and l.arrive_on < (y.year_start + interval '1 year')::date order by l.arrive_on" },
+      { "title": "Owner blocks", "sql": "select k.starts_on as \"from\", k.ends_on as \"to\", k.ends_on - k.starts_on as nights, k.kind, coalesce(k.note, '') as note from blocks k join v_cap_year y on y.home_id = k.home_id where k.home_id = $1 and k.ends_on > y.year_start order by k.starts_on" },
+      { "title": "Count", "sql": "select coalesce((select nights_used from v_night_cap where home_id = $1), 0) as \"nights let so far\", coalesce((select nights_booked_ahead from v_night_cap where home_id = $1), 0) as \"booked ahead\", coalesce((select night_cap - nights_total from v_night_cap where home_id = $1)::text, 'no cap') as \"left\"" }
     ]
   }
 ]

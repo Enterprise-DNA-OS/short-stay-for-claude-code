@@ -1,0 +1,6 @@
+Confirmation code,Listing's nickname,Guest's name,Guest's email,Guest's phone,Check in,Check out,Number of guests,Source,Status,Accommodation fare,Cleaning fare,Channel commission,Total paid,Creation date
+HMX4K2P9QA,Avalon Beach House,Rebecca Lowe,rebecca.lowe@example.com,0411 222 301,2026-01-09,2026-01-14,5,airbnb2,confirmed,"2,450.00",190.00,379.75,"2,640.00",2025-11-02
+BDC-5512093,Avalon Beach House,Marcus Webb,marcus.webb@example.com,0411 222 302,2026-01-16,2026-01-19,4,Booking.com,confirmed,"1,470.00",190.00,220.50,"1,660.00",2025-12-10
+GY-DIRECT-0041,Avalon Beach House,Annie Fitzgerald,annie.f@example.com,0411 222 303,2026-02-20,2026-02-23,2,manual,confirmed,"1,290.00",190.00,,"1,480.00",2026-01-15
+HMQ8PL21ZX,Palm Beach Studio,Rebecca Lowe,rebecca.lowe@example.com,0411 222 301,2026-03-06,2026-03-08,2,Airbnb,canceled,560.00,90.00,0,0,2026-02-01
+HMZ7TT45RN,Palm Beach Studio,Owen Price,owen.price@example.com,0411 222 304,2027-01-02,2027-01-07,2,airbnb2,confirmed,"1,600.00",90.00,248.00,0,2026-10-30

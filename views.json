@@ -2,13 +2,31 @@
   {
     "name": "week",
     "title": "This week",
-    "subtitle": "Short-Stay Management for Claude Code: what needs attention, rendered by npm run view",
+    "subtitle": "What needs a decision, the turnovers, and who is arriving",
     "sections": [
-      {
-        "title": "Needs attention",
-        "note": "TODO(author): point this at the industry's attention view (overdue, stuck, quiet).",
-        "sql": "select 'replace me' as item, 'TODO(author)' as why"
-      }
+      { "title": "Needs attention", "note": "Cleans not booked or overdue, double bookings, statements late, night caps close, registrations expiring.", "sql": "select reason, home, ref, detail from v_attention order by severity, reason, home" },
+      { "title": "Turnovers, next three days", "sql": "select depart_on as departs, home, code as departing, turnaround, next_arrive_on as \"next arrival\", coalesce(cleaner, case when clean_id is null then 'NOT BOOKED' else 'no cleaner' end) as cleaner from v_turnovers where depart_on between stay_today() - 1 and stay_today() + 3 order by depart_on, home" },
+      { "title": "Arrivals, next three days", "sql": "select arrive_on as arrives, home, code, guest, guests_count as guests, nights, channel from v_stays where status = 'confirmed' and arrive_on between stay_today() and stay_today() + 3 order by arrive_on, home" },
+      { "title": "The next twelve weeks", "sql": "select w::date as \"week of\", count(n.night_on) as \"nights on books\", round(100.0 * count(n.night_on) / nullif((select count(*) from homes where active) * 7, 0), 1) as \"occupancy %\" from generate_series(date_trunc('week', stay_today()), date_trunc('week', stay_today()) + interval '11 weeks', interval '1 week') w left join v_nights n on n.night_on >= w::date and n.night_on < w::date + 7 group by w order by w" }
+    ]
+  },
+  {
+    "name": "owners",
+    "title": "Owners and homes",
+    "subtitle": "Twelve months per home, statements, and night caps",
+    "sections": [
+      { "title": "Homes, last twelve months", "note": "Our margin is the management fee plus cleaning fees, less what the cleaners were paid.", "sql": "select home, owner, nights_let as \"nights let\", occupancy_pct as \"occupancy %\", round(rent_cents / 100.0, 2) as rent, round(owner_cents / 100.0, 2) as \"owner share\", round(margin_cents / 100.0, 2) as \"our margin\", avg_rating as rating from v_home_performance order by margin_cents desc" },
+      { "title": "Statements, last three months", "sql": "select o.name as owner, to_char(s.period_start, 'YYYY-MM') as month, s.status, round(s.payout_cents / 100.0, 2) as payout, s.issued_on as issued, s.paid_on as paid from statements s join owners o on o.id = s.owner_id where s.period_start >= (date_trunc('month', stay_today()) - interval '3 months')::date order by s.period_start desc, o.name" },
+      { "title": "Night caps", "sql": "select home, night_cap as cap, nights_used as used, nights_booked_ahead as \"booked ahead\", night_cap - nights_total as \"left\" from v_night_cap order by (nights_total::numeric / night_cap) desc" }
+    ]
+  },
+  {
+    "name": "compliance",
+    "title": "Compliance",
+    "subtitle": "The rules in docs/compliance.md checked against the records",
+    "sections": [
+      { "title": "To act on", "sql": "select rule, state, home, detail from v_compliance where state <> 'clean' order by case state when 'breached' then 0 else 1 end, rule, home" },
+      { "title": "Checked and clean", "sql": "select rule, count(*) as records from v_compliance where state = 'clean' group by rule order by rule" }
     ]
   }
 ]

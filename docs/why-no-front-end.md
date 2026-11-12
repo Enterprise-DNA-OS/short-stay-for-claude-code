@@ -13,12 +13,14 @@ That layer used to be the whole product, because talking to a database was hard.
 
 ## What you give up
 
-- **A visual board.** Stages are a table you ask about, not cards you drag.
+- **A multi-calendar you drag.** The calendar is a table you ask about (`/calendar`), not a grid you drag bookings across.
+- **The channel connection.** Guesty pushes rates and availability to Airbnb, Booking.com and Vrbo. This does not. Keep a channel manager for that and import its reservations here, or have Enterprise DNA connect it.
+- **The guest inbox.** Messages stay in the channels or your email.
 - **A phone app.** It runs where Claude Code runs.
 - **A vendor help desk.** This is open source. Enterprise DNA supports the installed version for businesses that want someone to call.
 
 ## Who this fits
 
-Small teams who already use Claude Code, or who would rather learn to ask than learn another interface. If your team needs a screen to look at all day, keep Guesty. If you need the answers more than the screens, this is cheaper, faster and yours.
+Small teams who already use Claude Code, or who would rather learn to ask than learn another interface. If your team needs a screen to look at all day, keep Guesty, or have a screen built on top of your own database. If you need the answers more than the screens, this is cheaper, faster and yours.
 
 Installed and run for you: https://enterprisedna.co/omni/instead-of/guesty
